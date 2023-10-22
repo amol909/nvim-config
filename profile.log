@@ -1,0 +1,591 @@
+FUNCTION  <SNR>51_AgentStartupError()
+    Defined: ~/.local/share/nvim/site/pack/packer/start/copilot.vim/autoload/copilot/agent.vim:512
+Called 11 times
+Total time:   0.000194
+ Self time:   0.000194
+
+count  total (s)   self (s)
+   11              0.000058   while has_key(self, 'job') && !has_key(self, 'startup_error') && !has_key(self, 'capabilities')
+                                sleep 10m
+   11              0.000019   endwhile
+   11              0.000029   if has_key(self, 'capabilities') || has_key(self, 'client_id')
+                                return ''
+   11              0.000006   else
+   11              0.000024     return get(self, 'startup_error', 'Something unexpected went wrong spawning the agent')
+                              endif
+
+FUNCTION  <SNR>12_Remove_Matches()
+    Defined: /tmp/.mount_nvimAIdR0a/usr/share/nvim/runtime/plugin/matchparen.vim:197
+Called 29 times
+Total time:   0.000567
+ Self time:   0.000567
+
+count  total (s)   self (s)
+   29              0.000306   if exists('w:paren_hl_on') && w:paren_hl_on
+    2              0.000014     silent! call matchdelete(3)
+    2              0.000011     let w:paren_hl_on = 0
+   29              0.000041   endif
+
+FUNCTION  <SNR>51_Command()
+    Defined: ~/.local/share/nvim/site/pack/packer/start/copilot.vim/autoload/copilot/agent.vim:406
+Called 11 times
+Total time:   2.729747
+ Self time:   2.729747
+
+count  total (s)   self (s)
+   11              0.000064   if !has('nvim-0.6') && v:version < 900
+                                return [v:null, '', 'Vim version too old']
+   11              0.000004   endif
+   11              0.000023   let node = get(g:, 'copilot_node_command', '')
+   11              0.000014   if empty(node)
+   11              0.000014     let node = ['node']
+                              elseif type(node) == type('')
+                                let node = [expand(node)]
+   11              0.000004   endif
+   11              2.729287   if !executable(get(node, 0, ''))
+   11              0.000175     if get(node, 0, '') ==# 'node'
+   11              0.000078       return [v:null, '', 'Node.js not found in PATH']
+                                else
+                                  return [v:null, '', 'Node.js executable `' . get(node, 0, '') . "' not found"]
+                                endif
+                              endif
+                              let node_version = s:GetNodeVersion(node)
+                              let warning = ''
+                              if node_version.major < 18 && get(node, 0, '') !=# 'node'
+                                let node_version_from_path = s:GetNodeVersion(['node'])
+                                if node_version_from_path.major >= 18
+                                  let warning = 'Ignoring g:copilot_node_command: Node.js ' . node_version.string . ' is end-of-life'
+                                  let node = ['node']
+                                  let node_version = node_version_from_path
+                                endif
+                              endif
+                              if node_version.status != 0
+                                return [v:null, '', 'Node.js exited with status ' . node_version.status]
+                              endif
+                              if !get(g:, 'copilot_ignore_node_version')
+                                if node_version.major == 0
+                                  return [v:null, node_version.string, 'Could not determine Node.js version']
+                                elseif node_version.major < 16
+                                  return [v:null, node_version.string, 'Node.js version 16.x or newer required but found ' . node_version.string]
+                                endif
+                              endif
+                              let agent = get(g:, 'copilot_agent_command', '')
+                              if empty(agent) || !filereadable(agent)
+                                let agent = s:root . '/dist/agent.js'
+                                if !filereadable(agent)
+                                  return [v:null, node_version.string, 'Could not find dist/agent.js (bad install?)']
+                                endif
+                              endif
+                              return [node + [agent], node_version.string, warning]
+
+FUNCTION  <SNR>29_ClearPreview()
+    Defined: ~/.local/share/nvim/site/pack/packer/start/copilot.vim/autoload/copilot.vim:318
+Called 11 times
+Total time:   0.000205
+ Self time:   0.000144
+
+count  total (s)   self (s)
+   11              0.000015   if s:has_nvim_ghost_text
+   11   0.000124   0.000063     call nvim_buf_del_extmark(0, copilot#NvimNs(), 1)
+                              elseif s:has_vim_ghost_text
+                                call prop_remove({'type': s:hlgroup, 'all': v:true})
+                                call prop_remove({'type': s:annot_hlgroup, 'all': v:true})
+   11              0.000004   endif
+
+FUNCTION  <SNR>29_SuggestionTextWithAdjustments()
+    Defined: ~/.local/share/nvim/site/pack/packer/start/copilot.vim/autoload/copilot.vim:219
+Called 11 times
+Total time:   0.000609
+ Self time:   0.000580
+
+count  total (s)   self (s)
+   11              0.000005   try
+   11   0.000148   0.000119     if mode() !~# '^[iR]' || (s:HideDuringCompletion() && pumvisible()) || !exists('b:_copilot.suggestions')
+   11              0.000025       return ['', 0, 0, '']
+                                endif
+                                let choice = get(b:_copilot.suggestions, b:_copilot.choice, {})
+                                if !has_key(choice, 'range') || choice.range.start.line != line('.') - 1 || type(choice.text) !=# v:t_string
+                                  return ['', 0, 0, '']
+                                endif
+                                let line = getline('.')
+                                let offset = col('.') - 1
+                                let choice_text = strpart(line, 0, copilot#doc#UTF16ToByteIdx(line, choice.range.start.character)) . choice.text
+                                let typed = strpart(line, 0, offset)
+                                let end_offset = copilot#doc#UTF16ToByteIdx(line, choice.range.end.character)
+                                if end_offset < 0
+                                  let end_offset = len(line)
+                                endif
+                                let delete = strpart(line, offset, end_offset - offset)
+                                let uuid = get(choice, 'uuid', '')
+                                if typed =~# '^\s*$'
+                                  let leading = matchstr(choice_text, '^\s\+')
+                                  let unindented = strpart(choice_text, len(leading))
+                                  if strpart(typed, 0, len(leading)) == leading && unindented !=# delete
+                                    return [unindented, len(typed) - len(leading), strchars(delete), uuid]
+                                  endif
+                                elseif typed ==# strpart(choice_text, 0, offset)
+                                  return [strpart(choice_text, offset), 0, strchars(delete), uuid]
+                                endif
+                              catch
+                                call copilot#logger#Exception()
+   11              0.000010   endtry
+                              return ['', 0, 0, '']
+
+FUNCTION  copilot#Agent()
+    Defined: ~/.local/share/nvim/site/pack/packer/start/copilot.vim/autoload/copilot.vim:78
+Called 11 times
+Total time:   2.731622
+ Self time:   0.000070
+
+count  total (s)   self (s)
+   11   2.731604   0.000052   call s:Start()
+   11              0.000012   return s:agent
+
+FUNCTION  copilot#OnInsertEnter()
+    Defined: ~/.local/share/nvim/site/pack/packer/start/copilot.vim/autoload/copilot.vim:424
+Called 3 times
+Total time:   0.735961
+ Self time:   0.000024
+
+count  total (s)   self (s)
+    3   0.735960   0.000023   return copilot#Schedule()
+
+FUNCTION  copilot#Clear()
+    Defined: ~/.local/share/nvim/site/pack/packer/start/copilot.vim/autoload/copilot.vim:122
+Called 11 times
+Total time:   0.001881
+ Self time:   0.000226
+
+count  total (s)   self (s)
+   11              0.000030   if exists('g:_copilot_timer')
+                                call timer_stop(remove(g:, '_copilot_timer'))
+   11              0.000006   endif
+   11              0.000017   if exists('b:_copilot')
+                                call copilot#agent#Cancel(get(b:_copilot, 'first', {}))
+                                call copilot#agent#Cancel(get(b:_copilot, 'cycling', {}))
+   11              0.000003   endif
+   11   0.001712   0.000057   call s:UpdatePreview()
+   11              0.000019   unlet! b:_copilot
+   11              0.000009   return ''
+
+FUNCTION  copilot#agent#New()
+    Defined: ~/.local/share/nvim/site/pack/packer/start/copilot.vim/autoload/copilot/agent.vim:523
+Called 11 times
+Total time:   2.730266
+ Self time:   0.000519
+
+count  total (s)   self (s)
+   11              0.000021   let opts = a:0 ? a:1 : {}
+   11              0.000218   let instance = {'requests': {}, 'methods': get(opts, 'methods', {}), 'notifications': get(opts, 'notifications', {}), 'editorConfiguration': get(opts, 'editorConfiguration', {}), 'Close': function('s:AgentClose'), 'Notify': function('s:AgentNotify'), 'Request': function('s:AgentRequest'), 'Call': function('s:AgentCall'), 'Cancel': function('s:AgentCancel'), 'StartupError': function('s:AgentStartupError'), }
+   11   2.729889   0.000142   let [command, node_version, command_error] = s:Command()
+   11              0.000025   if len(command_error)
+   11              0.000020     if empty(command)
+   11              0.000038       let instance.id = -1
+   11              0.000021       let instance.startup_error = command_error
+   11              0.000011       return instance
+                                else
+                                  let instance.node_version_warning = command_error
+                                endif
+                              endif
+                              let instance.node_version = node_version
+                              if has('nvim')
+                                call extend(instance, { 'Close': function('s:LspClose'), 'Notify': function('s:LspNotify'), 'Request': function('s:LspRequest')})
+                                let instance.client_id = v:lua.require'_copilot'.lsp_start_client(command, keys(instance.notifications) + keys(instance.methods) + ['LogMessage'])
+                                let instance.id = instance.client_id
+                              else
+                                let state = {'headers': {}, 'mode': 'headers', 'buffer': ''}
+                                let instance.open_buffers = {}
+                                let instance.job = copilot#job#Stream(command, function('s:OnOut', [instance, state]), function('s:OnErr', [instance]), function('s:OnExit', [instance]))
+                                let instance.id = exists('*jobpid') ? jobpid(instance.job) : job_info(instance.job).process
+                                let request = instance.Request('initialize', {'capabilities': {'workspace': {'workspaceFolders': v:true}}}, function('s:GetCapabilitiesResult'), function('s:GetCapabilitiesError'), instance)
+                              endif
+                              let s:instances[instance.id] = instance
+                              return instance
+
+FUNCTION  <SNR>28_Event()
+    Defined: ~/.local/share/nvim/site/pack/packer/start/copilot.vim/plugin/copilot.vim:45
+Called 11 times
+Total time:   2.734782
+ Self time:   0.000177
+
+count  total (s)   self (s)
+   11              0.000019   try
+   11   2.734708   0.000102     call call('copilot#On' . a:type, [])
+                              catch
+                                call copilot#logger#Exception()
+   11              0.000012   endtry
+
+FUNCTION  copilot#OnCursorMovedI()
+    Defined: ~/.local/share/nvim/site/pack/packer/start/copilot.vim/autoload/copilot.vim:436
+Called 8 times
+Total time:   1.998644
+ Self time:   0.000042
+
+count  total (s)   self (s)
+    8   1.998640   0.000037   return copilot#Schedule()
+
+FUNCTION  <SNR>29_Start()
+    Defined: ~/.local/share/nvim/site/pack/packer/start/copilot.vim/autoload/copilot.vim:59
+Called 11 times
+Total time:   2.731552
+ Self time:   0.000433
+
+count  total (s)   self (s)
+   11   0.000081   0.000041   if s:Running()
+                                return
+   11              0.000004   endif
+   11   2.731447   0.000368   let s:agent = copilot#agent#New({'notifications': { 'statusNotification': function('s:StatusNotification'), 'PanelSolution': function('copilot#panel#Solution'), 'PanelSolutionsDone': function('copilot#panel#SolutionsDone'), }, 'editorConfiguration' : s:EditorConfiguration()})
+
+FUNCTION  <SNR>12_Highlight_Matching_Pair()
+    Defined: /tmp/.mount_nvimAIdR0a/usr/share/nvim/runtime/plugin/matchparen.vim:39
+Called 29 times
+Total time:   0.003959
+ Self time:   0.003392
+
+count  total (s)   self (s)
+                              " Remove any previous match.
+   29   0.000832   0.000265   call s:Remove_Matches()
+                            
+                              " Avoid that we remove the popup menu.
+                              " Return when there are no colors (looks like the cursor jumps).
+   29              0.000173   if pumvisible() || (&t_Co < 8 && !has("gui_running"))
+                                return
+   29              0.000015   endif
+                            
+                              " Get the character under the cursor and check if it's in 'matchpairs'.
+   29              0.000126   let c_lnum = line('.')
+   29              0.000065   let c_col = col('.')
+   29              0.000032   let before = 0
+                            
+   29              0.000089   let text = getline(c_lnum)
+   29              0.000590   let matches = matchlist(text, '\(.\)\=\%'.c_col.'c\(.\=\)')
+   29              0.000062   if empty(matches)
+                                let [c_before, c] = ['', '']
+   29              0.000020   else
+   29              0.000156     let [c_before, c] = matches[1:2]
+   29              0.000019   endif
+   29              0.000379   let plist = split(&matchpairs, '.\zs[:,]')
+   29              0.000092   let i = index(plist, c)
+   29              0.000034   if i < 0
+                                " not found, in Insert mode try character before the cursor
+   27              0.000109     if c_col > 1 && (mode() == 'i' || mode() == 'R')
+    9              0.000021       let before = strlen(c_before)
+    9              0.000010       let c = c_before
+    9              0.000013       let i = index(plist, c)
+   27              0.000058     endif
+   27              0.000027     if i < 0
+                                  " not found, nothing to do
+   27              0.000029       return
+                                endif
+    2              0.000001   endif
+                            
+                              " Figure out the arguments for searchpairpos().
+    2              0.000003   if i % 2 == 0
+                                let s_flags = 'nW'
+                                let c2 = plist[i + 1]
+    2              0.000001   else
+    2              0.000003     let s_flags = 'nbW'
+    2              0.000003     let c2 = c
+    2              0.000005     let c = plist[i - 1]
+    2              0.000001   endif
+    2              0.000003   if c == '['
+                                let c = '\['
+                                let c2 = '\]'
+    2              0.000001   endif
+                            
+                              " Find the match.  When it was just before the cursor move it there for a
+                              " moment.
+    2              0.000002   if before > 0
+                                let has_getcurpos = exists("*getcurpos")
+                                if has_getcurpos
+                                  " getcurpos() is more efficient but doesn't exist before 7.4.313.
+                                  let save_cursor = getcurpos()
+                                else
+                                  let save_cursor = winsaveview()
+                                endif
+                                call cursor(c_lnum, c_col - before)
+    2              0.000001   endif
+                            
+    2              0.000015   if !has("syntax") || !exists("g:syntax_on")
+                                let s_skip = "0"
+    2              0.000001   else
+                                " Build an expression that detects whether the current cursor position is
+                                " in certain syntax types (string, comment, etc.), for use as
+                                " searchpairpos()'s skip argument.
+                                " We match "escape" for special items, such as lispEscapeSpecial, and
+                                " match "symbol" for lispBarSymbol.
+    2              0.000009     let s_skip = 'synstack(".", col("."))' . '->indexof({_, id -> synIDattr(id, "name") =~? ' . '"string\\|character\\|singlequote\\|escape\\|symbol\\|comment"}) >= 0'
+                                " If executing the expression determines that the cursor is currently in
+                                " one of the syntax types, then we want searchpairpos() to find the pair
+                                " within those syntax types (i.e., not skip).  Otherwise, the cursor is
+                                " outside of the syntax types and s_skip should keep its value so we skip
+                                " any matching pair inside the syntax types.
+                                " Catch if this throws E363: pattern uses more memory than 'maxmempattern'.
+    2              0.000002     try
+    2              0.000049       execute 'if ' . s_skip . ' | let s_skip = "0" | endif'
+                                catch /^Vim\%((\a\+)\)\=:E363/
+                                  " We won't find anything, so skip searching, should keep Vim responsive.
+                                  return
+    2              0.000003     endtry
+    2              0.000001   endif
+                            
+                              " Limit the search to lines visible in the window.
+    2              0.000006   let stoplinebottom = line('w$')
+    2              0.000004   let stoplinetop = line('w0')
+    2              0.000002   if i % 2 == 0
+                                let stopline = stoplinebottom
+    2              0.000001   else
+    2              0.000006     let stopline = stoplinetop
+    2              0.000001   endif
+                            
+                              " Limit the search time to 300 msec to avoid a hang on very long lines.
+                              " This fails when a timeout is not supported.
+    2              0.000005   if mode() == 'i' || mode() == 'R'
+                                let timeout = exists("b:matchparen_insert_timeout") ? b:matchparen_insert_timeout : g:matchparen_insert_timeout
+    2              0.000001   else
+    2              0.000009     let timeout = exists("b:matchparen_timeout") ? b:matchparen_timeout : g:matchparen_timeout
+    2              0.000001   endif
+    2              0.000001   try
+    2              0.000174     let [m_lnum, m_col] = searchpairpos(c, '', c2, s_flags, s_skip, stopline, timeout)
+                              catch /E118/
+                                " Can't use the timeout, restrict the stopline a bit more to avoid taking
+                                " a long time on closed folds and long lines.
+                                " The "viewable" variables give a range in which we can scroll while
+                                " keeping the cursor at the same position.
+                                " adjustedScrolloff accounts for very large numbers of scrolloff.
+                                let adjustedScrolloff = min([&scrolloff, (line('w$') - line('w0')) / 2])
+                                let bottom_viewable = min([line('$'), c_lnum + &lines - adjustedScrolloff - 2])
+                                let top_viewable = max([1, c_lnum-&lines+adjustedScrolloff + 2])
+                                " one of these stoplines will be adjusted below, but the current values are
+                                " minimal boundaries within the current window
+                                if i % 2 == 0
+                                  if has("byte_offset") && has("syntax_items") && &smc > 0
+                            	let stopbyte = min([line2byte("$"), line2byte(".") + col(".") + &smc * 2])
+                            	let stopline = min([bottom_viewable, byte2line(stopbyte)])
+                                  else
+                            	let stopline = min([bottom_viewable, c_lnum + 100])
+                                  endif
+                                  let stoplinebottom = stopline
+                                else
+                                  if has("byte_offset") && has("syntax_items") && &smc > 0
+                            	let stopbyte = max([1, line2byte(".") + col(".") - &smc * 2])
+                            	let stopline = max([top_viewable, byte2line(stopbyte)])
+                                  else
+                            	let stopline = max([top_viewable, c_lnum - 100])
+                                  endif
+                                  let stoplinetop = stopline
+                                endif
+                                let [m_lnum, m_col] = searchpairpos(c, '', c2, s_flags, s_skip, stopline)
+    2              0.000002   endtry
+                            
+    2              0.000002   if before > 0
+                                if has_getcurpos
+                                  call setpos('.', save_cursor)
+                                else
+                                  call winrestview(save_cursor)
+                                endif
+    2              0.000001   endif
+                            
+                              " If a match is found setup match highlighting.
+    2              0.000007   if m_lnum > 0 && m_lnum >= stoplinetop && m_lnum <= stoplinebottom 
+    2              0.000005     if exists('*matchaddpos')
+    2              0.000020       call matchaddpos('MatchParen', [[c_lnum, c_col - before], [m_lnum, m_col]], 10, 3)
+                                else
+                                  exe '3match MatchParen /\(\%' . c_lnum . 'l\%' . (c_col - before) . 'c\)\|\(\%' . m_lnum . 'l\%' . m_col . 'c\)/'
+    2              0.000001     endif
+    2              0.000003     let w:paren_hl_on = 1
+    2              0.000001   endif
+
+FUNCTION  <SNR>29_EditorConfiguration()
+    Defined: ~/.local/share/nvim/site/pack/packer/start/copilot.vim/autoload/copilot.vim:31
+Called 11 times
+Total time:   0.000813
+ Self time:   0.000692
+
+count  total (s)   self (s)
+   11              0.000044   let filetypes = copy(s:filetype_defaults)
+   11              0.000027   if type(get(g:, 'copilot_filetypes')) == v:t_dict
+                                call extend(filetypes, g:copilot_filetypes)
+   11              0.000004   endif
+   11   0.000713   0.000592   return { 'enableAutoCompletions': empty(get(g:, 'copilot_enabled', 1)) ? v:false : v:true, 'disabledLanguages': map(sort(keys(filter(filetypes, { k, v -> empty(v) }))), { _, v -> {'languageId': v}}), }
+
+FUNCTION  copilot#Enabled()
+    Defined: ~/.local/share/nvim/site/pack/packer/start/copilot.vim/autoload/copilot.vim:188
+Called 11 times
+Total time:   2.732524
+ Self time:   0.000298
+
+count  total (s)   self (s)
+   11   2.732518   0.000292   return get(g:, 'copilot_enabled', 1) && empty(s:BufferDisabled()) && empty(copilot#Agent().StartupError())
+
+FUNCTION  <SNR>29_Running()
+    Defined: ~/.local/share/nvim/site/pack/packer/start/copilot.vim/autoload/copilot.vim:55
+Called 11 times
+Total time:   0.000040
+ Self time:   0.000040
+
+count  total (s)   self (s)
+   11              0.000036   return exists('s:agent.job') || exists('s:agent.client_id')
+
+FUNCTION  <SNR>29_HideDuringCompletion()
+    Defined: ~/.local/share/nvim/site/pack/packer/start/copilot.vim/autoload/copilot.vim:215
+Called 8 times
+Total time:   0.000029
+ Self time:   0.000029
+
+count  total (s)   self (s)
+    8              0.000025   return get(g:, 'copilot_hide_during_completion', 1)
+
+FUNCTION  copilot#NvimNs()
+    Defined: ~/.local/share/nvim/site/pack/packer/start/copilot.vim/autoload/copilot.vim:118
+Called 11 times
+Total time:   0.000061
+ Self time:   0.000061
+
+count  total (s)   self (s)
+   11              0.000057   return nvim_create_namespace('github-copilot')
+
+FUNCTION  <SNR>29_BufferDisabled()
+    Defined: ~/.local/share/nvim/site/pack/packer/start/copilot.vim/autoload/copilot.vim:165
+Called 11 times
+Total time:   0.000410
+ Self time:   0.000410
+
+count  total (s)   self (s)
+   11              0.000077   if &buftype =~# '^\%(help\|prompt\|quickfix\|terminal\)$'
+                                return 5
+   11              0.000004   endif
+   11              0.000020   if exists('b:copilot_disabled')
+                                return empty(b:copilot_disabled) ? 0 : 3
+   11              0.000004   endif
+   11              0.000014   if exists('b:copilot_enabled')
+                                return empty(b:copilot_enabled) ? 4 : 0
+   11              0.000003   endif
+   11              0.000064   let short = empty(&l:filetype) ? '.' : split(&l:filetype, '\.', 1)[0]
+   11              0.000029   let config = get(g:, 'copilot_filetypes', {})
+   11              0.000042   if type(config) == v:t_dict && has_key(config, &l:filetype)
+                                return empty(config[&l:filetype])
+   11              0.000016   elseif has_key(config, short)
+                                return empty(config[short])
+   11              0.000011   elseif has_key(config, '*')
+                                return empty(config['*'])
+   11              0.000005   else
+   11              0.000029     return get(s:filetype_defaults, short, 1) == 0 ? 2 : 0
+                              endif
+
+FUNCTION  copilot#Schedule()
+    Defined: ~/.local/share/nvim/site/pack/packer/start/copilot.vim/autoload/copilot.vim:411
+Called 11 times
+Total time:   2.734539
+ Self time:   0.000135
+
+count  total (s)   self (s)
+   11   0.001927   0.000046   call copilot#Clear()
+   11   2.732598   0.000074   if !s:has_ghost_text || !copilot#Enabled() || !copilot#IsMapped()
+   11              0.000006     return
+                              endif
+                              let delay = a:0 ? a:1 : get(g:, 'copilot_idle_delay', 75)
+                              let g:_copilot_timer = timer_start(delay, function('s:Trigger', [bufnr('')]))
+
+FUNCTION  <SNR>29_UpdatePreview()
+    Defined: ~/.local/share/nvim/site/pack/packer/start/copilot.vim/autoload/copilot.vim:327
+Called 11 times
+Total time:   0.001655
+ Self time:   0.000841
+
+count  total (s)   self (s)
+   11              0.000006   try
+   11   0.000727   0.000118     let [text, outdent, delete, uuid] = s:SuggestionTextWithAdjustments()
+   11              0.000049     let text = split(text, "\n", 1)
+   11              0.000023     if empty(text[-1])
+   11              0.000030       call remove(text, -1)
+   11              0.000005     endif
+   11              0.000017     if empty(text) || !s:has_ghost_text
+   11   0.000256   0.000050       return s:ClearPreview()
+                                endif
+                                if exists('b:_copilot.cycling_callbacks')
+                                  let annot = '(1/…)'
+                                elseif exists('b:_copilot.cycling')
+                                  let annot = '(' . (b:_copilot.choice + 1) . '/' . len(b:_copilot.suggestions) . ')'
+                                else
+                                  let annot = ''
+                                endif
+                                call s:ClearPreview()
+                                if s:has_nvim_ghost_text
+                                  let data = {'id': 1}
+                                  let data.virt_text_win_col = virtcol('.') - 1
+                                  let append = strpart(getline('.'), col('.') - 1 + delete)
+                                  let data.virt_text = [[text[0] . append . repeat(' ', delete - len(text[0])), s:hlgroup]]
+                                  if len(text) > 1
+                                    let data.virt_lines = map(text[1:-1], { _, l -> [[l, s:hlgroup]] })
+                                    if !empty(annot)
+                                      let data.virt_lines[-1] += [[' '], [annot, s:annot_hlgroup]]
+                                    endif
+                                  elseif len(annot)
+                                    let data.virt_text += [[' '], [annot, s:annot_hlgroup]]
+                                  endif
+                                  let data.hl_mode = 'combine'
+                                  call nvim_buf_set_extmark(0, copilot#NvimNs(), line('.')-1, col('.')-1, data)
+                                else
+                                  call prop_add(line('.'), col('.'), {'type': s:hlgroup, 'text': text[0]})
+                                  for line in text[1:]
+                                    call prop_add(line('.'), 0, {'type': s:hlgroup, 'text_align': 'below', 'text': line})
+                                  endfor
+                                  if !empty(annot)
+                                    call prop_add(line('.'), col('$'), {'type': s:annot_hlgroup, 'text': ' ' . annot})
+                                  endif
+                                endif
+                                if !has_key(b:_copilot.shown_choices, uuid)
+                                  let b:_copilot.shown_choices[uuid] = v:true
+                                  call copilot#Request('notifyShown', {'uuid': uuid})
+                                endif
+                              catch
+                                return copilot#logger#Exception()
+   11              0.000007   endtry
+
+FUNCTIONS SORTED ON TOTAL TIME
+count  total (s)   self (s)  function
+   11   2.734782   0.000177  <SNR>28_Event()
+   11   2.734539   0.000135  copilot#Schedule()
+   11   2.732524   0.000298  copilot#Enabled()
+   11   2.731622   0.000070  copilot#Agent()
+   11   2.731552   0.000433  <SNR>29_Start()
+   11   2.730266   0.000519  copilot#agent#New()
+   11   2.729747             <SNR>51_Command()
+    8   1.998644   0.000042  copilot#OnCursorMovedI()
+    3   0.735961   0.000024  copilot#OnInsertEnter()
+   29   0.003959   0.003392  <SNR>12_Highlight_Matching_Pair()
+   11   0.001881   0.000226  copilot#Clear()
+   11   0.001655   0.000841  <SNR>29_UpdatePreview()
+   11   0.000813   0.000692  <SNR>29_EditorConfiguration()
+   11   0.000609   0.000580  <SNR>29_SuggestionTextWithAdjustments()
+   29   0.000567             <SNR>12_Remove_Matches()
+   11   0.000410             <SNR>29_BufferDisabled()
+   11   0.000205   0.000144  <SNR>29_ClearPreview()
+   11   0.000194             <SNR>51_AgentStartupError()
+   11   0.000061             copilot#NvimNs()
+   11   0.000040             <SNR>29_Running()
+
+FUNCTIONS SORTED ON SELF TIME
+count  total (s)   self (s)  function
+   11              2.729747  <SNR>51_Command()
+   29   0.003959   0.003392  <SNR>12_Highlight_Matching_Pair()
+   11   0.001655   0.000841  <SNR>29_UpdatePreview()
+   11   0.000813   0.000692  <SNR>29_EditorConfiguration()
+   11   0.000609   0.000580  <SNR>29_SuggestionTextWithAdjustments()
+   29              0.000567  <SNR>12_Remove_Matches()
+   11   2.730266   0.000519  copilot#agent#New()
+   11   2.731552   0.000433  <SNR>29_Start()
+   11              0.000410  <SNR>29_BufferDisabled()
+   11   2.732524   0.000298  copilot#Enabled()
+   11   0.001881   0.000226  copilot#Clear()
+   11              0.000194  <SNR>51_AgentStartupError()
+   11   2.734782   0.000177  <SNR>28_Event()
+   11   0.000205   0.000144  <SNR>29_ClearPreview()
+   11   2.734539   0.000135  copilot#Schedule()
+   11   2.731622   0.000070  copilot#Agent()
+   11              0.000061  copilot#NvimNs()
+    8   1.998644   0.000042  copilot#OnCursorMovedI()
+   11              0.000040  <SNR>29_Running()
+    8              0.000029  <SNR>29_HideDuringCompletion()
+
