@@ -17,7 +17,7 @@ end)
 
 require('mason').setup({})
 require('mason-lspconfig').setup({
-  ensure_installed = {'tsserver'},
+  ensure_installed = {"tsserver","html","cssls","tailwindcss"},
   handlers = {
     lsp_zero.default_setup,
     lua_ls = function()
