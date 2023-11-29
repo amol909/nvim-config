@@ -51,6 +51,7 @@ return require("packer").startup(function(use)
 	use("github/copilot.vim")
 	use("windwp/nvim-ts-autotag")
 	use("tpope/vim-commentary")
+	use("tpope/vim-surround")
 	use("nvim-tree/nvim-tree.lua")
 	use({
 		"stevearc/conform.nvim",
@@ -58,4 +59,7 @@ return require("packer").startup(function(use)
 			require("conform").setup()
 		end,
 	})
+	use({ "kevinhwang91/nvim-ufo", requires = "kevinhwang91/promise-async" })
+	require("ufo").setup()
+	--use("lukas-reineke/indent-blankline.nvim")
 end)
