@@ -100,6 +100,11 @@ _G.packer_plugins = {
     path = "/home/a909/.local/share/nvim/site/pack/packer/start/harpoon",
     url = "https://github.com/theprimeagen/harpoon"
   },
+  ["kanagawa.nvim"] = {
+    loaded = true,
+    path = "/home/a909/.local/share/nvim/site/pack/packer/start/kanagawa.nvim",
+    url = "https://github.com/rebelot/kanagawa.nvim"
+  },
   ["lsp-zero.nvim"] = {
     loaded = true,
     path = "/home/a909/.local/share/nvim/site/pack/packer/start/lsp-zero.nvim",
@@ -175,11 +180,6 @@ _G.packer_plugins = {
     loaded = true,
     path = "/home/a909/.local/share/nvim/site/pack/packer/start/promise-async",
     url = "https://github.com/kevinhwang91/promise-async"
-  },
-  ["rose-pine"] = {
-    loaded = true,
-    path = "/home/a909/.local/share/nvim/site/pack/packer/start/rose-pine",
-    url = "https://github.com/rose-pine/neovim"
   },
   ["telescope.nvim"] = {
     loaded = true,

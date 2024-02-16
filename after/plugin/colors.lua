@@ -52,12 +52,21 @@ function ColorMyCode(color)
 	----vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
 	----vim.api.nvim_set_hl(0, "NormalFloat", {bg = "none"})
 
-	require("rose-pine").setup({
-		disable_background = true,
+	require("kanagawa").setup({
+		disable_background = false,
 		disable_italics = false,
+		transparent = false,
+		colors = {
+			theme = {
+				all = {
+					ui = {
+						bg_gutter = "none",
+					},
+				},
+			},
+		},
 	})
-
-	color = color or "rose-pine"
+	color = color or "kanagawa"
 	vim.cmd.colorscheme(color)
 
 	vim.api.nvim_set_hl(0, "Normal", { bg = "none" })
