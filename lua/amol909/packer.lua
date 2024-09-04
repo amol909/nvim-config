@@ -1,68 +1,83 @@
--- This file can be loaded by calling `lua require('plugins')` from your init.vim
+-- Using lazy nvim instead of packer
 
--- Only required if you have packer configured as `opt`
-vim.cmd([[packadd packer.nvim]])
+local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
+if not (vim.uv or vim.loop).fs_stat(lazypath) then
+  vim.fn.system({
+    "git",
+    "clone",
+    "--filter=blob:none",
+    "https://github.com/folke/lazy.nvim.git",
+    "--branch=stable", -- latest stable release
+    lazypath,
+  })
+end
+vim.opt.rtp:prepend(lazypath)
 
-return require("packer").startup(function(use)
-	-- Packer can manage itself
-	use("wbthomason/packer.nvim")
-	use({
-		"nvim-telescope/telescope.nvim",
-		tag = "0.1.3",
-		-- or                            , branch = '0.1.x',
-		requires = { { "nvim-lua/plenary.nvim" } },
-	})
-
-	use("nvim-treesitter/nvim-treesitter", { run = ":TSUpdate" })
-	use("nvim-treesitter/playground")
-	use("theprimeagen/harpoon")
-	use("mbbill/undotree")
-	use("tpope/vim-fugitive")
-	use({
-		"VonHeikemen/lsp-zero.nvim",
-		branch = "v3.x",
-		requires = {
-			--- Uncomment these if you want to manage LSP servers from neovim
-			-- {'williamboman/mason.nvim'},
-			-- {'williamboman/mason-lspconfig.nvim'},
-
-			-- LSP Support
-			{ "neovim/nvim-lspconfig" },
-			-- Autocompletion
-			{ "hrsh7th/nvim-cmp" },
-			{ "hrsh7th/cmp-nvim-lsp" },
-			{ "L3MON4D3/LuaSnip" },
-		},
-	})
-	use({
+require("lazy").setup({
+    { "catppuccin/nvim", name = "catppuccin", priority = 1000 },
+    {
+    'nvim-telescope/telescope.nvim', tag = '0.1.6',
+-- or                              , branch = '0.1.x',
+      dependencies = { 'nvim-lua/plenary.nvim' }
+    },
+	 {'nvim-treesitter/nvim-treesitter', build = ":TSUpdate"},
+	{"nvim-treesitter/playground"},
+     {"theprimeagen/harpoon"},
+	 {"mbbill/undotree"},
+	 {"tpope/vim-fugitive"},
+    {'VonHeikemen/lsp-zero.nvim', branch = 'v3.x'},
+    {'neovim/nvim-lspconfig'},
+    {'hrsh7th/cmp-nvim-lsp'},
+    {'hrsh7th/nvim-cmp'},
+    {'L3MON4D3/LuaSnip'},	
+    {
 		"williamboman/mason.nvim",
-	})
-	use({
+	},
+	{
 		"williamboman/mason-lspconfig.nvim",
 		"neovim/nvim-lspconfig",
-	})
-	use({
+	},
+	{
 		"windwp/nvim-autopairs",
-		config = function()
-			require("nvim-autopairs").setup({})
-		end,
-	})
-	use({ "catppuccin/nvim", as = "catppuccin" })
-	--use({ "rose-pine/neovim", as = "rose-pine" })
-	--use("rebelot/kanagawa.nvim")
-	use("github/copilot.vim")
-	use("windwp/nvim-ts-autotag")
-	use("tpope/vim-commentary")
-	use("tpope/vim-surround")
-	use("nvim-tree/nvim-tree.lua")
-	use({
+	       event = "InsertEnter",
+	       opts = {}
+	},
+	{"github/copilot.vim"},
+	{"windwp/nvim-ts-autotag"},
+	{"tpope/vim-commentary"},
+	{"tpope/vim-surround"},
+	{"nvim-tree/nvim-tree.lua"},
+	{
 		"stevearc/conform.nvim",
 		config = function()
 			require("conform").setup()
 		end,
-	})
-	use({ "kevinhwang91/nvim-ufo", requires = "kevinhwang91/promise-async" })
-	use({ "folke/trouble.nvim", requires = "kyazdani42/nvim-web-devicons" })
-	--require("ufo").setup()
-	--use("lukas-reineke/indent-blankline.nvim")
-end)
+	},
+	   {
+	   "CopilotC-Nvim/CopilotChat.nvim",
+	   branch = "canary",
+	   dependencies = {
+	     { "github/copilot.vim" }, -- or github/copilot.vim
+	   },
+	   opts = {
+	     debug = true, -- Enable debugging
+         show_help = true, -- Show help message on startup
+         window = {
+        layout = "float",
+      },
+      auto_follow_cursor = false,
+	     -- See Configuration section for rest
+	   },
+	 },
+	{ "kevinhwang91/nvim-ufo",  dependencies= "kevinhwang91/promise-async" },
+    {
+        'nvim-lualine/lualine.nvim',
+        dependencies = { 'nvim-tree/nvim-web-devicons' }
+    },
+	{ "folke/trouble.nvim",
+	        config= function()
+	           require("trouble").setup()
+	        end,
+	   cmd="Trouble",
+	    dependencies= "kyazdani42/nvim-web-devicons" }
+})
